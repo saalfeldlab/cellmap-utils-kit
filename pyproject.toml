@@ -17,7 +17,7 @@ dependencies = [
 dynamic = ["version"]
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT"}
+license = { text = "MIT" }
 keywords = []
 authors = [{ name = "Larissa Heinrich", email = "heinrichl@janelia.hhmi.org" }]
 classifiers = [
