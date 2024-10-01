@@ -34,5 +34,6 @@ repos:
       - id: mypy
         files: "^src/"
         # # you have to add the things you want to type check against here
-        # additional_dependencies:
+        additional_dependencies:
+          - types-PyYAML
         #   - numpy
