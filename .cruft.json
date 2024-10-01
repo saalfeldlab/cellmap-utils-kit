@@ -1,0 +1,21 @@
+{
+  "template": "https://github.com/tlambert03/pyrepo-cookiecutter",
+  "commit": "a464b9946d054b0769a71daa07a3c1ad9c50ea3e",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "full_name": "Larissa Heinrich",
+      "email": "heinrichl@janelia.hhmi.org",
+      "github_username": "neptunes5thmoon",
+      "project_name": "cellmap-utils-kit",
+      "project_slug": "cellmap_utils_kit",
+      "project_short_description": "Collection of various utilities for cellmap data including data preparation scripts, functions to extract info from attributes etc",
+      "pypi_username": "neptunes5thmoon",
+      "_copy_without_render": [
+        ".github/workflows/*"
+      ],
+      "_template": "https://github.com/tlambert03/pyrepo-cookiecutter"
+    }
+  },
+  "directory": null
+}
