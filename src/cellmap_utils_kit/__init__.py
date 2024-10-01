@@ -5,6 +5,7 @@ This package provides various CLIs for data preparation, including
 - zarr format handling
 - multiscale data generation
 - h5 conversion
+
 as well as functions and methods to interact with cellmap style data.
 """
 
