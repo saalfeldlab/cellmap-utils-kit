@@ -108,10 +108,13 @@ lint.ignore = [
     "B027",
     # Ignore complexity
     "C901",
+    "D205",
     # Allow multi-line summary to start with a captial letter
     "D212",
     # Allow multi-line summary
     "D213",
+    # Allow non-imperative summaries
+    "D401",
     # Allow boolean positional values in function calls, like `dict.get(... True)`
     "FBT003",
     # Ignore checks for possible passwords
