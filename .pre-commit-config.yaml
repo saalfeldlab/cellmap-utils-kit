@@ -12,16 +12,12 @@ repos:
   #     - id: conventional-pre-commit
   #       stages: [commit-msg]
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
+  - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.8
     hooks:
       - id: ruff
         args: [--fix]
-
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
-    hooks:
-      - id: black
+      - id: ruff-format
 
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.20.2
