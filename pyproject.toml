@@ -11,8 +11,14 @@ dependencies = [
     "zarr",
     "numpy",
     "jupyter",
-    "fibsem-tools",
     "scikit-image",
+    "fibsem-tools",
+    "dask",
+    "xarray-datatree",
+    "xarray",
+    "pydantic-ome-ngff",
+    "xarray-ome-ngff"
+
 ]
 dynamic = ["version"]
 readme = "README.md"
