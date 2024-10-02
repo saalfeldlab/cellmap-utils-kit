@@ -3,6 +3,82 @@ cellmap-utils.kit.attribute_handler: Utility functions to deal with cellmap
     style attributes.
 """
 
+import json
+from typing import Sequence
+
+import h5py
+import zarr
+
+
+def access_attributes(attr: str | dict) -> dict:
+    """Decode a nested attribute if it is encoded as a json-string. Otherwise just
+    return it.
+
+    Args:
+        attr (str | dict): Attribute that potentially needs to be decoded
+
+    Returns:
+        dict: Nested attribute as dictionary.
+
+    """
+    if isinstance(attr, str):
+        cellmap_attr_decoded: dict = json.loads(attr)
+        return cellmap_attr_decoded
+    return attr
+
+
+def get_res_dict_from_attrs(
+    attrs: h5py.AttributesManager | zarr.attrs.Attributes | dict,
+) -> dict[str, Sequence[float | int]]:
+    """From attributes that contain multiscales pyramid description get a dictionary
+    that goes from the name of the scale array (usually "s0"/"s1") to the scale
+    parameter of the corresponding coordinate transformation.
+
+    Args:
+        attrs (h5py.AttributesManager | zarr.attrs.Attributes | dict): Attributes
+        containing multiscale description
+
+    Returns:
+        dict[str, Sequence[float | int]]: Mapping <name of scale array> -> <scale>
+
+    """
+    result = {}
+    ms_attrs = access_attributes(attrs["multiscales"])
+    for ds in ms_attrs[0]["datasets"]:
+        for ct in ds["coordinateTransformations"]:
+            if ct["type"] == "scale":
+                result[ds["path"]] = ct["scale"]
+                break
+    return result
+
+
+def get_scalelevel(
+    group: h5py.Group | zarr.Group, request_scale: Sequence[float]
+) -> str:
+    """Find the name of the array in a multiscale pyramid that has a specific scale.
+
+    Args:
+        group (h5py.Group | zarr.Group): multiscale group
+        request_scale (Sequence[float]): scale of the array you're looking for
+
+    Raises:
+        ValueError: If that scale is not in the scale pyramid.
+
+    Returns:
+        str: name of the array with the scale `request_scale`
+
+    """
+    scales = get_res_dict_from_attrs(group.attrs)
+    ref_scale = None
+    for sclvl, scale in scales.items():
+        if tuple(scale) == tuple(request_scale):
+            ref_scale = sclvl
+            break
+    if ref_scale is None:
+        msg = f"Did not find scale level with scale {request_scale} in {group.name}"
+        raise ValueError(msg)
+    return ref_scale
+
 
 def add_scalelevel_to_attributes(
     attrs_as_dict: dict, scalelvl: str, scale: list[float], translation: list[float]
