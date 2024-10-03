@@ -80,13 +80,16 @@ def _check_crop_for_raw(
     datainfo: dict, crop: str, scalelevels: tuple[str, ...] = ()
 ) -> None:
     try:
-        if not (Path(datainfo["crop_group"]) / crop / "raw").exists():
-            msg = f"{Path(datainfo['crop_group'])/crop/'raw'} does not exist"
-            raise ValueError(msg)
-        for sclvl in scalelevels:
-            read_any_xarray(Path(datainfo["crop_group"]) / crop / "raw" / sclvl)
+        read_any_xarray(Path(datainfo["crop_group"]) / crop / "raw")
     except Exception as e:
         logger.error(f"{e}, crop: {crop}")
+    else:
+        try:
+            for sclvl in scalelevels:
+                # could be replaced by making use of data tree
+                read_any_xarray(Path(datainfo["crop_group"]) / crop / "raw" / sclvl)
+        except Exception as e:
+            logger.error(f"{e}, crop: {crop}")
 
 
 @background
