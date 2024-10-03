@@ -28,7 +28,7 @@ def access_attributes(attr: str | dict) -> dict:
 
 
 def get_res_dict_from_attrs(
-    attrs: h5py.AttributesManager | zarr.attrs.Attributes | dict,
+    attrs: h5py.AttributeManager | zarr.attrs.Attributes | dict,
 ) -> dict[str, Sequence[float | int]]:
     """From attributes that contain multiscales pyramid description get a dictionary
     that goes from the name of the scale array (usually "s0"/"s1") to the scale
