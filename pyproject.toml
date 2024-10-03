@@ -12,13 +12,12 @@ dependencies = [
     "numpy",
     "jupyter",
     "scikit-image",
-    "fibsem-tools",
+    "fibsem-tools@git+ssh://git@github.com/neptunes5thmoon/fibsem-tools.git@feat/deep_tree",
     "dask",
     "xarray-datatree",
     "xarray",
     "pydantic-ome-ngff",
     "xarray-ome-ngff"
-
 ]
 dynamic = ["version"]
 readme = "README.md"
@@ -49,6 +48,7 @@ source = "vcs"
 
 [tool.hatch.metadata]
 source-layout = "src"
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 only-include = ["src"]
