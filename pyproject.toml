@@ -42,7 +42,7 @@ homepage = "https://github.com/saalfeldlab/cellmap-utils-kit"
 repository = "https://github.com/saalfeldlab/cellmap-utils-kit"
 
 [project.scripts]
-#data-prep = "cellmap-utils-kit.cli:cli"
+data-prep = "cellmap_utils_kit.cli:cli"
 
 [tool.hatch.version]
 source = "vcs"
