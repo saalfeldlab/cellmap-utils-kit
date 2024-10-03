@@ -19,8 +19,9 @@ Dependencies:
 - logging: For logging error messages and progress information.
 - pathlib: For path manipulation and handling.
 - yaml: For loading dataset configurations from a YAML file.
-- zarr: For accessing Zarr datasets.
-- fibsem_tools: For reading data stored in Zarr files.
+- fibsem_tools: For reading data stored in Zarr or HDF5 files.
+- cellmap_utils.kit.attribute_handler: To flexibly handle Zarr and HDF5 attributes
+- cellmap_utils.kit.h5_xarray_reader: To read Zarr or HDF5 mutliscale data.
 - cellmap_utils_kit.parallel_utils: For running background tasks.
 
 Usage:
@@ -44,8 +45,9 @@ from pathlib import Path
 
 import fibsem_tools as fst
 import yaml
-import zarr
 
+from cellmap_utils_kit.attribute_handler import access_attributes
+from cellmap_utils_kit.h5_xarray_reader import read_any_xarray
 from cellmap_utils_kit.parallel_utils import background
 
 logger = logging.getLogger(__name__)
@@ -58,16 +60,18 @@ def _check_crop(datainfo: dict, crop: str, scalelevels: tuple[str, ...] = ()) ->
             msg = f"{Path(datainfo['crop_group'])/crop} does not exist"
             raise ValueError(msg)
         # check that scale levels exists for all labels
-        crop_zarr = zarr.open(Path(datainfo["crop_group"]) / crop)
-        if "labels" in crop_zarr:
-            crop_zarr = crop_zarr["labels"]
+        crop_hdl = fst.read(Path(datainfo["crop_group"]) / crop)
+        if "labels" in crop_hdl:
+            crop_hdl = crop_hdl["labels"]
             croplbl_path = Path(datainfo["crop_group"]) / crop / "labels"
         else:
             croplbl_path = Path(datainfo["crop_group"]) / crop
-        labels = zarr.open(croplbl_path).attrs["cellmap"]["annotation"]["class_names"]
+        labels = access_attributes(fst.read(croplbl_path).attrs["cellmap"])[
+            "annotation"
+        ]["class_names"]
         for lbl in labels:
             for sclvl in scalelevels:
-                fst.read_xarray(croplbl_path / lbl / sclvl)
+                read_any_xarray(croplbl_path / lbl / sclvl)
     except Exception as e:
         logger.error(f"{e}, crop: {crop}")
 
@@ -80,7 +84,7 @@ def _check_crop_for_raw(
             msg = f"{Path(datainfo['crop_group'])/crop/'raw'} does not exist"
             raise ValueError(msg)
         for sclvl in scalelevels:
-            fst.read_xarray(Path(datainfo["crop_group"]) / crop / "raw" / sclvl)
+            read_any_xarray(Path(datainfo["crop_group"]) / crop / "raw" / sclvl)
     except Exception as e:
         logger.error(f"{e}, crop: {crop}")
 
@@ -100,7 +104,7 @@ def _check_dataset(
                 raise ValueError(msg)
             # check that scale levels are openable for raw
             for sclvl in raw_scalelevels:
-                fst.read_xarray(Path(datainfo["raw"]) / sclvl)
+                read_any_xarray(Path(datainfo["raw"]) / sclvl)
         # check that crop group exists
         if not Path(datainfo["crop_group"]).exists():
             msg = f"{Path(datainfo['crop_group'])} does not exist"
