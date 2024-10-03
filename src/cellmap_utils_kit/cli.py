@@ -20,6 +20,7 @@ main script. Run the script + command with the `--help` option to view detailed 
 for each command, e.g. `data-prep copy-crops --help`
 """
 
+import logging
 from typing import Sequence
 
 import click
@@ -37,9 +38,21 @@ from cellmap_utils_kit.multiscale import (
 
 
 @click.group()
-def cli() -> None:
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    help="Increase verbosity level (-v for INFO, -vv for DEBUG).",
+)
+def cli(verbose: int) -> None:
     """Data preparation CLI."""
-    pass
+    # Set the logging level based on the verbosity
+    if verbose == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif verbose > 1:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
 
 @click.command(name="copy-crops")
