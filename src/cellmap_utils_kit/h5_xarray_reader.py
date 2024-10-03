@@ -222,14 +222,14 @@ def to_dask(
 class HDFArrayWrapper(BaseArrayWrapper):
     """An Array wrapper that passes `h5py.Dataset` instances through unchanged."""
 
-    def wrap(self, data: h5py.Dataset) -> np.Array:
+    def wrap(self, data: h5py.Dataset) -> np.ndarray:
         """Read the HDF5 Dataset.
 
         Args:
             data (h5py.Dataset): Data to be read
 
         Returns:
-            np.Array: numpy array of `data`
+            np.ndarray: numpy array of `data`
 
         """
         return data[:]
