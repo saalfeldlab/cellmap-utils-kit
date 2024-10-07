@@ -125,6 +125,7 @@ def check_data_yaml_main(
     data_yaml: str,
     label_scalelevels: tuple[str, ...] = (),
     raw_scalelevels: tuple[str, ...] = (),
+    max_concurrency: None | int = None,
 ) -> None:
     """Check that data specified in a data configuration yaml exists and is readable.
 
@@ -137,21 +138,27 @@ def check_data_yaml_main(
             checked for labels. Defaults to ().
         raw_scalelevels (tuple[str, ...], optional): Scale levels that should be
             checked for raw data. Defaults to ().
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
+    task_list = []
     with open(data_yaml) as f:
         datasets = yaml.safe_load(f)["datasets"]
-        looper = asyncio.gather(
-            *[
+        for dataname, datainfo in datasets.items():
+            task_list.append(
                 _check_dataset(
                     dataname,
                     datainfo,
                     label_scalelevels=label_scalelevels,
                     raw_scalelevels=raw_scalelevels,
                 )
-                for dataname, datainfo in datasets.items()
-            ]
-        )
+            )
+            if len(task_list) == max_concurrency:
+                looper = asyncio.gather(*task_list)
+                loop.run_until_complete(looper)
+                task_list = []
+    looper = asyncio.gather(*task_list)
     loop.run_until_complete(looper)
     logger.info("all done!")

@@ -89,7 +89,9 @@ def _export_crop(src_crop_path: str, destination: str, dataname: str) -> None:
     h5f.close()
 
 
-def h5_export_main(data_yaml: str, destination: str, concurrence: int = 4) -> None:
+def h5_export_main(
+    data_yaml: str, destination: str, max_concurrency: int | None = None
+) -> None:
     """Copy zarr data to h5 and rechunk to (8,8,8).
 
     This function resaves zarrs specified in a data configuration yaml to a new
@@ -99,7 +101,8 @@ def h5_export_main(data_yaml: str, destination: str, concurrence: int = 4) -> No
     Args:
         data_yaml (str): Path to data configuration yaml with zarrs.
         destination (str): Path to destination directory
-        concurrence (int, optional): Number of concurrent processes. Defaults to 4.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -111,7 +114,7 @@ def h5_export_main(data_yaml: str, destination: str, concurrence: int = 4) -> No
             for crop in datainfo["crops"]:
                 crop_path = str(Path(datainfo["crop_group"]) / crop)
                 task_list.append(_export_crop(crop_path, destination, dataname))
-                if len(task_list) == concurrence:
+                if len(task_list) == max_concurrency:
                     looper = asyncio.gather(*task_list)
                     loop.run_until_complete(looper)
                     task_list = []

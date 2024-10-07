@@ -74,7 +74,9 @@ def _copy_cellmap_dataset(dataname: str, datainfo: dict, destination: str) -> No
             dsgroupms_dst.attrs.put(cropgroup_src[ds]["s0"].attrs.asdict())
 
 
-def copy_crops_main(data_yaml: str, destination: str) -> None:
+def copy_crops_main(
+    data_yaml: str, destination: str, max_concurrency: int | None = None
+) -> None:
     """Copy crops described in data configuration yaml located at `data_yaml` to
     directory `destination`.
 
@@ -86,6 +88,8 @@ def copy_crops_main(data_yaml: str, destination: str) -> None:
     Args:
         data_yaml (str): Path to data configuration yaml.
         destination (str): Path of parent directory for copy.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -94,5 +98,9 @@ def copy_crops_main(data_yaml: str, destination: str) -> None:
         datasets = yaml.safe_load(f)["datasets"]
         for dataname, datainfo in datasets.items():
             task_list.append(_copy_cellmap_dataset(dataname, datainfo, destination))
+            if len(task_list) == max_concurrency:
+                looper = asyncio.gather(*task_list)
+                loop.run_until_complete(looper)
+                task_list = []
     looper = asyncio.gather(*task_list)
     loop.run_until_complete(looper)

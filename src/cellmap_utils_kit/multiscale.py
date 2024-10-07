@@ -184,7 +184,9 @@ def _smooth_multiscale_raw(crop_path: str | Path, num_scales: int = 4) -> None:
         crop["raw"].attrs.put(new_attrs)
 
 
-def smooth_multiscale_labels_main(data_yaml: str, num_scales: int = 4) -> None:
+def smooth_multiscale_labels_main(
+    data_yaml: str, num_scales: int = 4, max_concurrency: int | None = None
+) -> None:
     """Generate multiscale pyramid for labels.
 
     This function will generate a multiscale pyramid for labels but allows for soft
@@ -195,6 +197,8 @@ def smooth_multiscale_labels_main(data_yaml: str, num_scales: int = 4) -> None:
     Args:
         data_yaml (str): Data configuration yaml
         num_scales (int, optional): Desired number of scale levels. Defaults to 4.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -212,12 +216,16 @@ def smooth_multiscale_labels_main(data_yaml: str, num_scales: int = 4) -> None:
                     ]
                 )
             )
+            if len(all_funcs) == max_concurrency:
+                looper = asyncio.gather(*all_funcs)
+                loop.run_until_complete(looper)
+                all_funcs = []
     looper = asyncio.gather(*all_funcs)
     loop.run_until_complete(looper)
 
 
 def smooth_multiscale_raw_main(
-    data_yaml: str, num_scales: int = 4, concurrence: int = 4
+    data_yaml: str, num_scales: int = 4, max_concurrency: int | None = None
 ) -> None:
     """Generate multiscale pyramid for raw data.
 
@@ -227,7 +235,8 @@ def smooth_multiscale_raw_main(
     Args:
         data_yaml (str): Data configuration yaml
         num_scales (int, optional): Desired number of scale levels. Defaults to 4.
-        concurrence (int, optional): Number of concurrent processes. Defaults to 4.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -248,7 +257,7 @@ def smooth_multiscale_raw_main(
                         Path(datainfo["crop_group"]) / crop, num_scales=num_scales
                     )
                 )
-                if len(task_list) == concurrence:
+                if len(task_list) == max_concurrency:
                     looper = asyncio.gather(*task_list)
                     loop.run_until_complete(looper)
                     task_list = []

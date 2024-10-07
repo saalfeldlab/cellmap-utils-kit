@@ -58,15 +58,25 @@ def cli(verbose: int) -> None:
 @click.command(name="copy-crops")
 @click.argument("data-yaml")
 @click.argument("destination")
-def copy_crops_cli(data_yaml: str, destination: str) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def copy_crops_cli(
+    data_yaml: str, destination: str, max_concurrency: int | None = None
+) -> None:
     """Copy crops specified in `data_yaml` to a new `destination`.
 
     Args:
         data_yaml (str): Path to data configuration yaml
         destination (str): Folder to which crops should be copied
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    copy_crops_main(data_yaml, destination)
+    copy_crops_main(data_yaml, destination, max_concurrency=max_concurrency)
 
 
 @click.command(name="check-data-yaml")
@@ -83,10 +93,17 @@ def copy_crops_cli(data_yaml: str, destination: str) -> None:
     multiple=True,
     help="Scale levels for verifying raw data.",
 )
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
 def check_data_yaml_cli(
     data_yaml: str,
     label_scalelevels: tuple[str, ...] = (),
     raw_scalelevels: tuple[str, ...] = (),
+    max_concurrency: None | int = None,
 ) -> None:
     """Check that data specified in a data configuration yaml is valid.
 
@@ -96,10 +113,15 @@ def check_data_yaml_cli(
             openable for labels. Defaults to empty tuple.
         raw_scalelevels (tuple[str]): Scale levels for which to verify that they're
             openable for raw data. Defaults. to empty tuple.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     check_data_yaml_main(
-        data_yaml, label_scalelevels=label_scalelevels, raw_scalelevels=raw_scalelevels
+        data_yaml,
+        label_scalelevels=label_scalelevels,
+        raw_scalelevels=raw_scalelevels,
+        max_concurrency=max_concurrency,
     )
 
 
@@ -108,27 +130,47 @@ def check_data_yaml_cli(
 @click.option(
     "--num-scales", type=int, help="desired number of scale levels.", default=4
 )
-def smooth_multiscale_labels_cli(data_yaml: str, num_scales: int = 4) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def smooth_multiscale_labels_cli(
+    data_yaml: str, num_scales: int = 4, max_concurrency: None | int = None
+) -> None:
     """Generate multiscale pyramid for labels. Results in label smoothing.
 
     Args:
         data_yaml (str): Path to data configuration yaml
         num_scales (int, optional): Desired number of scale levels. Defaults to 4.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    smooth_multiscale_labels_main(data_yaml, num_scales=num_scales)
+    smooth_multiscale_labels_main(
+        data_yaml, num_scales=num_scales, max_concurrency=max_concurrency
+    )
 
 
 @click.command(name="add-raw")
 @click.argument("data-yaml")
-def add_raw_cli(data_yaml: str) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def add_raw_cli(data_yaml: str, max_concurrency: int | None = None) -> None:
     """Add cropped raw to crop.
 
     Args:
         data_yaml (str): Path to data configuration yaml
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    add_raw_main(data_yaml)
+    add_raw_main(data_yaml, max_concurrency=max_concurrency)
 
 
 @click.command(name="multiscale-raw")
@@ -136,34 +178,62 @@ def add_raw_cli(data_yaml: str) -> None:
 @click.option(
     "--num-scales", type=int, help="desired number of scale levels.", default=4
 )
-def smooth_multiscale_raw_cli(data_yaml: str, num_scales: int = 4) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def smooth_multiscale_raw_cli(
+    data_yaml: str, num_scales: int = 4, max_concurrency: int | None = None
+) -> None:
     """Generate multiscale pyramid for raw. Results in label smoothing.
 
     Args:
         data_yaml (str): Path to data configuration yaml
         num_scales (int, optional): Desired number of scale levels. Defaults to 4.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    smooth_multiscale_raw_main(data_yaml, num_scales=num_scales)
+    smooth_multiscale_raw_main(
+        data_yaml, num_scales=num_scales, max_concurrency=max_concurrency
+    )
 
 
 @click.command(name="h5-export")
 @click.argument("data-yaml")
 @click.argument("destination")
-def h5_export_cli(data_yaml: str, destination: str) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def h5_export_cli(
+    data_yaml: str, destination: str, max_concurrency: int | None = None
+) -> None:
     """Export crops from zarr to h5.
 
     Args:
         data_yaml (str): Path to data configuration yaml
         destination (str): Folder to which crops should be copied
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    h5_export_main(data_yaml, destination)
+    h5_export_main(data_yaml, destination, max_concurrency=max_concurrency)
 
 
 @click.command(name="correct-attrs")
 @click.argument("data-yaml")
-def correct_attrs_cli(data_yaml: str) -> None:
+@click.option(
+    "--max-concurrency",
+    type=int,
+    default=None,
+    help="Limit the number of tasks that are run concurrently.",
+)
+def correct_attrs_cli(data_yaml: str, max_concurrency: int | None = None) -> None:
     """Correct the complement counts in the label attributes for crops.
 
     Crops are specified in a data configuration yaml. Attributes will be edited in
@@ -171,9 +241,11 @@ def correct_attrs_cli(data_yaml: str) -> None:
 
     Args:
         data_yaml (str): Path to data configuration yaml.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
-    correct_label_attrs_main(data_yaml)
+    correct_label_attrs_main(data_yaml, max_concurrency=max_concurrency)
 
 
 @click.command(name="filter-yaml")

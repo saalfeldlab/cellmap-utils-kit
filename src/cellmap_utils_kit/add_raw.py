@@ -107,12 +107,13 @@ def _add_raw(dataname: str, datainfo: dict) -> None:
         logger.info(f"Successfully added raw in {dataname}: {crop}")
 
 
-def add_raw_main(data_yaml: str, concurrence: int = 1) -> None:
+def add_raw_main(data_yaml: str, max_concurrency: None | int = None) -> None:
     """Adds raw data alongside labels to crops specified in `data_yaml`.
 
     Args:
         data_yaml (str): Path to data configuration yaml
-        concurrence (int, optional): Number of concurrent processes. Defaults to 1.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -121,7 +122,7 @@ def add_raw_main(data_yaml: str, concurrence: int = 1) -> None:
         task_list = []
         for dataname, datainfo in datasets.items():
             task_list.append(_add_raw(dataname, datainfo))
-            if len(task_list) == concurrence:
+            if len(task_list) == max_concurrency:
                 looper = asyncio.gather(*task_list)
                 loop.run_until_complete(looper)
                 task_list = []

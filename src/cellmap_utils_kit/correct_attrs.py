@@ -80,7 +80,9 @@ def _correct_label_attrs(crop_path: str | Path) -> None:
             src.attrs.put(attrs_as_dict)
 
 
-def correct_label_attrs_main(data_yaml: str) -> None:
+def correct_label_attrs_main(
+    data_yaml: str, max_concurrency: None | int = None
+) -> None:
     """Coorect the complement_counts attributes for labels in crops listed in data
     configuration yaml.
 
@@ -89,6 +91,8 @@ def correct_label_attrs_main(data_yaml: str) -> None:
 
     Args:
         data_yaml (str): Data configuration yaml.
+        max_concurrency (int, optional): Maximum number of concurrent processes. If
+            None, no limit is set. Defaults to None.
 
     """
     loop = asyncio.get_event_loop()
@@ -100,5 +104,9 @@ def correct_label_attrs_main(data_yaml: str) -> None:
                 task_list.append(
                     _correct_label_attrs(Path(datainfo["crop_group"]) / crop)
                 )
+                if len(task_list) == max_concurrency:
+                    looper = asyncio.gather(*task_list)
+                    loop.run_until_complete(looper)
+                    task_list = []
     looper = asyncio.gather(*task_list)
     loop.run_until_complete(looper)
