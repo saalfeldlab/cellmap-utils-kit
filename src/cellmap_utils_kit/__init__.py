@@ -11,6 +11,8 @@ as well as functions and methods to interact with cellmap style data.
 
 from importlib.metadata import PackageNotFoundError, version
 
+from cellmap_utils_kit import attribute_handler, h5_xarray_reader
+
 try:
     __version__ = version("cellmap-utils-kit")
 except PackageNotFoundError:
@@ -18,3 +20,4 @@ except PackageNotFoundError:
 
 __author__ = "Larissa Heinrich"
 __email__ = "heinrichl@janelia.hhmi.org"
+__all__ = ["attribute_handler", "h5_xarray_reader"]  # Explicit re-export
