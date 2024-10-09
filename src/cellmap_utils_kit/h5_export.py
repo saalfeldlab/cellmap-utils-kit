@@ -58,10 +58,30 @@ logger = logging.getLogger(__name__)
 
 
 def _copy_data(zfh: zarr.Group, h5fh: h5py.Group | h5py.File, dataset: str) -> None:
-    data = np.array(zfh[dataset])
-    chunks = tuple(min(8, sh) for sh in data.shape)
-    h5fh.create_dataset(dataset, data=data, chunks=chunks)
-    for k, attr in zfh[dataset].attrs.asdict().items():
+    zarr_dset = zfh[dataset]
+    chunks = tuple(min(8, sh) for sh in zarr_dset.shape)
+    h5_dset = h5fh.create_dataset(
+        dataset, shape=zarr_dset.shape, chunks=chunks, dtype=zarr_dset.dtype
+    )
+
+    superchunks = (chunks[0],) + zarr_dset.chunks[1:]
+
+    # Calculate the number of superchunks along each dimension
+    num_superchunks = [
+        int(np.ceil(s / c)) for s, c in zip(zarr_dset.shape, superchunks)
+    ]
+    # Iterate over all superchunk indices
+    for chunk_idx in np.ndindex(*num_superchunks):
+        # construct indexing
+        superchunk_slices = (
+            slice(ch_idx * ch_size, min((ch_idx + 1) * ch_size, arr_sh))
+            for ch_idx, ch_size, arr_sh in zip(chunk_idx, superchunks, zarr_dset.shape)
+        )
+
+        # copy superchunk
+        h5_dset[superchunk_slices] = zarr_dset[superchunk_slices]
+
+    for k, attr in zarr_dset.attrs.asdict().items():
         h5fh.attrs.create(k, json.dumps(attr))
 
 
