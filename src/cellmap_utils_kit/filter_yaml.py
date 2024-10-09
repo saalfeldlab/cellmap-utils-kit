@@ -172,7 +172,7 @@ def check_annotated_label(
     ref_attrs = access_attributes(crop["labels"][label][ref_scale].attrs["cellmap"])[
         "annotation"
     ]
-    num_elements = np.product(crop["labels"][label][ref_scale].shape)
+    num_elements = np.prod(crop["labels"][label][ref_scale].shape).item()
     if "unknown" in ref_attrs["complement_counts"]:
         num_annotated = num_elements - ref_attrs["complement_counts"]["unknown"]
     else:
