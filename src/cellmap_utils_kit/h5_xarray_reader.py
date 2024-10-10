@@ -12,6 +12,7 @@ Key Functions:
 """
 
 import json
+from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -23,6 +24,7 @@ from dask.array.core import Array as DaskArray
 from dask.base import tokenize
 from datatree import DataTree
 from fibsem_tools import read, read_xarray
+from fibsem_tools.type import PathLike
 from pydantic_ome_ngff.v04.multiscale import (
     ArraySpec,
     GroupSpec,
@@ -142,11 +144,36 @@ class HDFMultiscaleGroup(MultiscaleGroup, HDFGroupSpec):
         return cls(**guess_inferred_members.model_dump())
 
 
-def read_any_xarray(*args: Any, **kwargs: Any) -> DataTree | DataArray:
+def read_any_xarray(
+    path: str | Path,
+    *,
+    chunks: Literal["auto"] | tuple[int, ...] = "auto",
+    coords: Literal["auto"] | dict[Hashable, Any] = "auto",
+    use_dask: bool = True,
+    attrs: dict[str, Any] | None = None,
+    name: str | None = None,
+    **kwargs: Any,
+) -> DataTree | DataArray:
     """Extension of fibsem_tools.read_xarray that can also interpret hdf5 data.
 
     For HDF5 data the OME-NGFF metadata is used but encoded as a single json string in
     the HDF5 dataset's `multiscales` attributes.
+
+    path (str | Path): The path to the array to load.
+    chunks (Literal["auto"] | tuple[int, ...], optional): The chunks to use for the
+        arrays in the tree. Ignored if `use_dask` is `False`. Defaults to "auto".
+    coords (Any, optional): If set to "auto" assumes all datasets to be part of
+        h5ified OME-NGFF hierarchy and infers xarray coordinates from that.
+        Otherwise, needs to be parasable as `coords` kwarg for DataArray and all
+        arrays will have the same coordinates. Defaults to "auto".
+    use_dask (bool, optional): Whether to wrap the DataArrays in dask arrays.
+        Defaults to True.
+    attrs (dict[str, Any] | None, optional): Attributes to add to the `element`'s
+        node in the tree. Defaults to None in which case it will be read and decoded
+        from the HDF5 attributes.
+    name (str | None, optional): Name of this node in the tree. Defaults to None.
+    kwargs (Any): Additional keyword arguments passed to `read` and
+        `create_dataelement`.
 
     Raises:
         ValueError: If multiscales is not supported for the given path.
@@ -158,11 +185,27 @@ def read_any_xarray(*args: Any, **kwargs: Any) -> DataTree | DataArray:
 
     """
     try:
-        return read_xarray(*args, **kwargs)
+        return read_xarray(
+            path,
+            chunks=chunks,
+            coords=coords,
+            use_dask=use_dask,
+            attrs=attrs,
+            name=name,
+            **kwargs,
+        )
     except ValueError as e:
         err_str = str(e)
         if "h5" in err_str:
-            return read_h5_xarray(*args, **kwargs)
+            return read_h5_xarray(
+                path,
+                chunks=chunks,
+                coords=coords,
+                use_dask=use_dask,
+                attrs=attrs,
+                name=name,
+                **kwargs,
+            )
         else:
             raise e
 
@@ -422,8 +465,9 @@ def create_datatree(
 
     Args:
         element (h5py.Group): The HDF5 Group
-        chunks (Literal["auto"] | tuple[int, ...], optional): The chunks to use for the
-            arrays in the tree. Ignored if `use_dask` is `False`. Defaults to "auto".
+        chunks (Literal["auto", "inherit"] | tuple[int, ...], optional): The chunks to
+            use for the arrays in the tree. Ignored if `use_dask` is `False`. Defaults
+            to "auto".
         coords (Any, optional): If set to "auto" assumes all datasets to be part of
             h5ified OME-NGFF hierarchy and infers xarray coordinates from that.
             Otherwise, needs to be parasable as `coords` kwarg for DataArray and all
@@ -476,30 +520,78 @@ def create_datatree(
 
 # adapted from fibsem_tools.io.zarr.core.to_xarray
 def create_dataelement(
-    element: h5py.Dataset | h5py.Group, **kwargs: Any
+    element: h5py.Dataset | h5py.Group,
+    *,
+    chunks: Literal["auto", "inherit"] | tuple[int, ...] = "auto",
+    coords: Literal["auto", "inherit"] | dict[Hashable, Any] = "auto",
+    use_dask: bool = True,
+    attrs: dict[str, Any] | None = None,
+    name: str | None = None,
 ) -> DataTree | DataArray:
     """Reads HDF5 Dataset and HDF5 Groups as a DataArray and a DataTree, respectively.
 
     Args:
         element (h5py.Dataset | h5py.Group): The HDF5 Dataset or HDF5 Group
-        kwargs (Any): Other kwargs for `create_datatree` or `create_dataarray`
+        chunks (Literal["auto", "inherit"] | tuple[int, ...], optional): The chunks to
+            use for the arrays in the tree. Ignored if `use_dask` is `False`. Defaults
+            to "auto".
+        coords (Any, optional): If set to "auto" assumes all datasets to be part of
+            h5ified OME-NGFF hierarchy and infers xarray coordinates from that.
+            Otherwise, needs to be parasable as `coords` kwarg for DataArray and all
+            arrays will have the same coordinates. Defaults to "auto".
+        use_dask (bool, optional): Whether to wrap the DataArrays in dask arrays.
+            Defaults to True.
+        attrs (dict[str, Any] | None, optional): Attributes to add to the `element`'s
+            node in the tree. Defaults to None in which case it will be read and decoded
+            from the HDF5 attributes.
+        name (str | None, optional): Name of this node in the tree. Defaults to None.
+
     Returns:
         DataTree | DataArray: The resulting DataArray or DataTree (with leaf nodes that
             are `DataArray`s)
 
     """
     if isinstance(element, h5py.Group):
-        return create_datatree(element, **kwargs)
-    return create_dataarray(element, **kwargs)
+        return create_datatree(
+            element,
+            chunks=chunks,
+            coords=coords,
+            use_dask=use_dask,
+            attrs=attrs,
+            name=name,
+        )
+    return create_dataarray(
+        element, chunks=chunks, coords=coords, use_dask=use_dask, attrs=attrs, name=name
+    )
 
 
-def read_h5_xarray(path: str, **kwargs: Any) -> DataTree | DataArray:
+def read_h5_xarray(
+    path: PathLike,
+    *,
+    chunks: Literal["auto", "inherit"] | tuple[int, ...] = "auto",
+    coords: Literal["auto", "inherit"] | dict[Hashable, Any] = "auto",
+    use_dask: bool = True,
+    attrs: dict[str, Any] | None = None,
+    name: str | None = None,
+    **kwargs: Any,
+) -> DataTree | DataArray:
     """Imitates fibsem_tools.read_xarray specifically for HDF5 datasets or groups.
 
     Args:
         path (str): Path pointing to a HDF5 Dataset or Group
-        kwargs (Any): Any other arguments that may be passed to `create_dataarray` or
-            `create_datatree`
+        chunks (Literal["auto"] | tuple[int, ...], optional): The chunks to use for the
+            arrays in the tree. Ignored if `use_dask` is `False`. Defaults to "auto".
+        coords (Any, optional): If set to "auto" assumes all datasets to be part of
+            h5ified OME-NGFF hierarchy and infers xarray coordinates from that.
+            Otherwise, needs to be parasable as `coords` kwarg for DataArray and all
+            arrays will have the same coordinates. Defaults to "auto".
+        use_dask (bool, optional): Whether to wrap the DataArrays in dask arrays.
+            Defaults to True.
+        attrs (dict[str, Any] | None, optional): Attributes to add to the `element`'s
+            node in the tree. Defaults to None in which case it will be read and decoded
+            from the HDF5 attributes.
+        name (str | None, optional): Name of this node in the tree. Defaults to None.
+        kwargs (Any) : Additional keyword arguments passed on to `fibsem_tools.read`.
 
     Returns:
         DataTree | DataArray: Resulting DataArray (for HDF5 Dataset) or DataTree (for
@@ -507,4 +599,11 @@ def read_h5_xarray(path: str, **kwargs: Any) -> DataTree | DataArray:
 
     """
     element = read(path, **kwargs)
-    return create_dataelement(element, **kwargs)
+    return create_dataelement(
+        element,
+        chunks=chunks,
+        coords=coords,
+        use_dask=use_dask,
+        attrs=attrs,
+        name=name,
+    )
